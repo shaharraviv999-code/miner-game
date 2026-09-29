@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#252c2e"><title>DEEP / MINER</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#07121b;--panel:#0e2029;--line:#2b4650;--mint:#75f4c4;--gold:#ffca77;--red:#ff7076;--muted:#88a5aa}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:#e7f1ef;font-family:system-ui,Segoe UI,sans-serif}button{font:inherit;color:inherit}
+#layout{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;padding:12px;max-width:1450px;margin:auto}.gamecol{display:flex;flex-direction:column;min-height:0}
+.header{height:48px;display:flex;align-items:center;justify-content:space-between;flex:none}.brand{font-weight:900;letter-spacing:.17em;font-size:17px}.brand i{color:var(--mint);font-style:normal}.depth{font-size:11px;color:var(--muted);text-align:right}.depth strong{display:block;font-size:19px;color:#fff}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px;flex:none}.meter,.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px}.meter label{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.08em;color:#9bb4b7}.bar{height:6px;background:#223740;border-radius:9px;margin-top:7px;overflow:hidden}.fill{height:100%;transition:width .12s}.hp{background:var(--red)}.fuel{background:var(--mint)}.cargo{background:var(--gold)}
+.stage{flex:1;min-height:160px;border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative;background:#09171e}canvas{display:block;width:100%;height:100%}.readout{position:absolute;left:12px;top:10px;background:#07121bd9;border:1px solid #38545c;border-radius:5px;padding:7px 9px;font-size:11px;line-height:1.6}.readout b{color:var(--gold)}.hint{position:absolute;right:12px;top:10px;background:#07121bd9;border:1px solid #38545c;border-radius:5px;padding:7px 9px;color:var(--mint);font-size:10px}.notice{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);border:1px solid #38675c;background:#081a1ce8;border-radius:6px;padding:7px 12px;font-size:11px;color:var(--mint);white-space:nowrap;pointer-events:none}
+.side{display:flex;flex-direction:column;gap:9px;overflow-y:auto}.sectiontitle{font-size:11px;color:var(--muted);letter-spacing:.14em;margin:1px 1px 7px}.stats{font-size:12px;line-height:1.7;color:#bdd1ce}.controls{display:grid;grid-template-columns:1fr 1fr;gap:7px}.keyhelp{font-size:11px;line-height:1.8;color:#a9c0c0}.key{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 5px;background:#1b3039;border:1px solid #3a5962;border-radius:4px;color:#fff;font-weight:bold}
+.btn{height:38px;width:100%;border:1px solid #477b70;border-radius:6px;background:#112b2c;color:var(--mint);font-weight:750;cursor:pointer}.btn.gold{border-color:#705f3f;background:#2a251a;color:var(--gold)}.btn:disabled{opacity:.45;cursor:default}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.small{font-size:10px;color:var(--muted);line-height:1.5;margin-top:5px}
+.shopitem{display:flex;align-items:center;gap:9px;margin:7px 0;padding:9px;background:linear-gradient(120deg,#142f38,#102129);border:1px solid #31525b;border-radius:8px;box-shadow:inset 0 1px #ffffff08}.shopicon{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:9px;border:1px solid #4b7b7b;background:radial-gradient(circle at 35% 25%,#31535c,#11262f 72%);color:var(--mint);box-shadow:inset 0 0 12px #75f4c422}.shopicon svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px #75f4c455)}.shopcopy{flex:1;min-width:0}.shopname{display:flex;justify-content:space-between;gap:4px;font-size:12px;font-weight:750}.shopname span{color:var(--mint);font-size:10px;white-space:nowrap}.shopcopy small{display:block;font-size:10px;color:var(--muted);margin-top:2px}.levelpips{display:flex;gap:3px;margin-top:6px}.levelpips i{display:block;width:14px;height:3px;border-radius:2px;background:#29414a}.levelpips i.on{background:var(--mint);box-shadow:0 0 6px #75f4c477}.shopitem button{width:auto;min-width:47px;padding:0 10px;height:31px;font-size:11px;border-radius:15px;box-shadow:0 3px 12px #75f4c414}
+.joystick{display:none;position:absolute;width:128px;height:128px;left:20px;bottom:20px;border-radius:50%;background:#162c35bb;border:2px solid #79a0a288;z-index:2;touch-action:none}.stick{position:absolute;width:52px;height:52px;border-radius:50%;background:#75f4c4bb;border:2px solid #b5ffe3;left:36px;top:36px;box-shadow:0 0 18px #75f4c455}.modal{position:absolute;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:5}.modal.open{display:flex}.dialog{width:min(440px,calc(100% - 30px));background:#10222b;border:1px solid #42616b;border-radius:12px;padding:17px}.dialog h2{margin:0 0 8px}.dialog p{color:#a5bdbe;font-size:13px}.dialog button{margin-top:8px}.mobilebar{display:none}
+@media(max-width:760px){#layout{display:flex;padding:7px;gap:6px}.gamecol{flex:1}.header{height:39px}.hud{grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:5px}.meter{padding:6px}.stage{min-height:140px}.side{display:none}.joystick{display:block}.hint{display:none}.mobilebar{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding-top:6px}.mobilebar .btn{height:35px;font-size:11px}.readout{font-size:10px;left:6px;top:6px}.notice{bottom:6px;font-size:10px}.stage canvas{touch-action:none}body.shopopen .side{position:fixed;display:flex;inset:8px;z-index:4;background:#07121b;padding:9px;border:1px solid var(--line);border-radius:10px;overflow-y:auto}body.shopopen .side #closeMobileShop{display:block!important}}
+.money-meter{display:flex;flex-direction:column;justify-content:center;gap:3px}#moneytext{display:block;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--gold)}.station-action{position:absolute;right:12px;bottom:12px;width:auto;padding:0 12px;z-index:3}.actions{grid-template-columns:1fr}@media(max-width:760px){.station-action{display:none}}
+</style><link rel="stylesheet" href="visuals.css"></head>
+<body><div id="layout"><main class="gamecol"><header class="header"><div class="brand"><i>///</i> DEEP / MINER</div><button class="pause-open" id="openPause" aria-haspopup="dialog">Ⅱ MENU</button><div class="sky-clock" id="skyClock" aria-label="Planet time"></div><div class="depth"><span id="depthLabel">DEPTH</span><strong id="depth">0 m</strong></div></header><section class="hud"><div class="meter"><label><span class="gauge-label"><i class="gauge-symbol">▰</i> HULL</span><span id="hptext"></span></label><div class="bar"><div class="fill hp" id="hpbar"></div></div></div><div class="meter" id="fuelMeter"><label><span class="gauge-label"><i class="gauge-symbol">▥</i> FUEL · L <span id="fuelAlert" class="fuel-alert" role="img" aria-label="Low fuel warning" hidden>⚠</span></span><span id="fueltext"></span></label><div class="bar"><div class="fill fuel" id="fuelbar"></div></div></div><div class="meter" id="cargoMeter"><label><button class="cargo-open" id="openCargo" aria-haspopup="dialog" aria-controls="cargoModal">▤ CARGO <span>[C]</span></button><span id="cargotext"></span></label><div class="bar"><div class="fill cargo" id="cargobar"></div></div><div class="cargo-load"><span id="cargoWeight"></span><span id="cargoEffect"></span></div></div><div class="meter money-meter"><label>CREDITS</label><strong id="moneytext">$0.00</strong></div></section><section class="stage" id="stage"><canvas id="game"></canvas><div id="fuelVignette" class="fuel-vignette" aria-hidden="true" hidden></div><button class="btn station-action" id="refuel" hidden>FUEL DEPOT · REFUEL</button><button class="btn gold station-action" id="sell" hidden>ORE EXCHANGE · SELL ORE</button><div class="readout" id="readout"></div><button id="overweightAlert" class="overweight-alert" hidden>⚠ OVERWEIGHT · OPEN CARGO</button><div id="seamScanner" class="seam-scanner" hidden></div><div id="endingCaption" class="ending-caption" hidden></div><div class="hint">A/D REACH THE THREE SURFACE PADS · S DIGS DOWN · WASD MOVE</div><div class="joystick" id="joystick"><div class="stick" id="stick"></div></div><div class="notice" id="notice">WASD TO THRUST · BUMP A BLOCK TO MINE</div></section><div class="mobilebar"><button class="btn" id="mobileStation">⛽ REFUEL</button><button class="btn gold" id="mobileSell">⇧ SELL ORE</button><button class="btn" id="mobileShop">⬡ UPGRADES</button></div></main><aside class="side"><button class="btn" id="closeMobileShop" style="display:none">CLOSE UPGRADES</button><section class="card"><div class="sectiontitle">PILOT</div><div class="keyhelp"><span class="key">W</span> up · <span class="key">A</span> left · <span class="key">S</span> down · <span class="key">D</span> right<br>Side impacts mine blocks. Hold S / Down to drill down. Impacts from below never mine. Cyan seams warn of gas: nearby mined blocks can blast (20%).</div></section><section class="card"><div class="sectiontitle">SURFACE SERVICE STOPS</div><div class="stats" id="stationstatus">At the surface · services available</div><button class="btn" id="repair" style="margin-top:7px">REPAIR HULL</button><div class="small">Fuel costs $0.50/L. About 1.8 seconds of active drilling per litre. Idle systems use only 0.07 L/s; an empty tank costs 1.5 hull/s. Fuel is on the left bedrock pad, ore exchange on the middle pad, and upgrades on the right pad.</div></section><section class="card"><div class="sectiontitle">UPGRADE GARAGE</div><div class="garage-banner"><img id="garageArt" alt="Weathered mechanic garage"></div><div class="small upgrade-caption">10 upgrade levels per system</div><div id="upgrades"></div></section><section class="card"><div class="sectiontitle">ECONOMY</div><div class="mineral-guide" id="mineralGuide"></div><div class="small">Starting hold: 10 slots / 300 kg · fuel tank: 10 L. Upgrade prices triple each level.</div><div class="small">Ore prices rise about 3× per tier. Coal value = $1 per ore. Quartz, iron, silver, lumen, gold, cobalt, xenite, and diamond unlock progressively deeper. Sell recovered ore at the ore exchange to earn credits.</div></section></aside></div><div class="modal" id="modal"><div class="dialog"><h2 id="dialogtitle"></h2><p id="dialogtext"></p><button class="btn" id="dialogclose">CONTINUE</button></div></div>
+<div class="modal cargo-modal" id="cargoModal" role="dialog" aria-modal="true" aria-labelledby="cargoTitle" aria-describedby="cargoHelp">
+  <section class="dialog cargo-dialog"><header><div><div class="sectiontitle">FREIGHT MANIFEST</div><h2 id="cargoTitle">Cargo hold</h2></div><button class="btn" id="closeCargo" aria-label="Close cargo and resume">CLOSE · ESC</button></header>
+  <div id="cargoSummary" class="cargo-summary"></div><p id="cargoHelp">Flight paused. Drop unwanted ore to free slots and reduce weight. Dropped ore is discarded without payment.</p>
+  <div id="cargoRows" class="cargo-rows"></div><div class="small cargo-footnote">Heavy cargo reduces flight speed. Exceeding the rated load activates OVERWEIGHT. Cargo upgrades add 5 slots and 150 kg.</div></section>
+</div><div class="modal pause-modal" id="pauseModal" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+<section class="dialog pause-dialog"><div class="sectiontitle">DEEP / MINER</div><h2 id="pauseTitle">Game paused</h2><p id="pauseHelp">Flight, fuel, mining, and planet time are paused.</p>
+<div class="pause-actions"><button class="btn gold" id="resumeGame">RESUME</button><button class="btn" id="openTutorial">FIELD MANUAL</button><button class="btn" id="restartGame">START OVER</button><button class="btn" id="quitGame">QUIT TO TITLE</button></div>
+<fieldset id="cheatControls"><legend>TESTING CHEATS</legend><label class="cheat-option"><span><b>God mode</b><small>Health and fuel always full</small></span><input type="checkbox" id="godMode"></label><label class="cheat-option"><span><b>Unlimited cash</b><small>Spend freely while enabled</small></span><input type="checkbox" id="cashCheat"></label><label class="cheat-option"><span><b>Instant Drill</b><small>Break mineable blocks immediately</small></span><input type="checkbox" id="instantDrillCheat"></label><label class="cheat-option"><span><b>Unlimited Backpack</b><small>No slot limit or weight slowdown</small></span><input type="checkbox" id="backpackCheat"></label><p class="small">Turning unlimited cash off restores your previous balance. Start Over resets the run and cheats.</p></fieldset><fieldset class="audio-options"><legend>AUDIO</legend><label><input id="soundEnabled" type="checkbox"> Sound effects</label><label><input id="musicEnabled" type="checkbox"> Music</label></fieldset>
+</section></div><div class="modal tutorial-modal" id="tutorialModal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+<section class="dialog tutorial-dialog"><div class="sectiontitle">VANTAGE EXTRACTIVE · HUMAN RESOURCES</div><h2 id="tutorialTitle">Welcome to the bottom rung.</h2>
+<div class="contract-card"><span class="contract-stamp">MINIMUM-WAGE CONTRACTOR</span><p>You have been assigned to a deserted planet. Vantage owns the mine. You supply the hours. Fuel, repairs, and equipment come out of your earnings.</p><p>There is one promise in the fine print: <b>when the company declares this mine depleted, the land becomes yours.</b></p><p class="small">A whole planet. One signature. Management calls it an opportunity.</p></div>
+<div class="sectiontitle">FIELD MANUAL</div><div class="tutorial-grid">
+<article><b>01 · FLY</b><p>WASD or arrow keys move your craft. On a phone, use the floating joystick. Gravity pulls you down; long falls damage your hull.</p></article>
+<article><b>02 · DRILL</b><p>Push left, right, or down into rock to mine it. You cannot drill upward. Dirt pays nothing; deeper ores pay more and resist your drill.</p></article>
+<article><b>03 · WATCH YOUR FUEL</b><p>Fuel drains slowly while idle and faster while drilling. Below 15%, red warning lights pulse. An empty tank damages your hull.</p></article>
+<article><b>04 · RETURN TO THE PADS</b><p>Fuel depot on the left. Ore exchange in the middle. Garage on the right. Dock close to each building to use its services.</p></article>
+<article><b>05 · MANAGE YOUR LOAD</b><p>Click Cargo or press C to inspect and drop ore. Both slots and weight matter. An overloaded craft moves very slowly.</p></article>
+<article><b>06 · INVEST IN YOUR CRAFT</b><p>Buy stronger drills, efficient cooling, larger tanks, hull plating, and cargo racks. Cyan seams warn of explosive gas. Esc pauses your shift.</p></article>
+</div><button class="btn gold" id="beginShift">SIGN CONTRACT · BEGIN SHIFT</button></section></div>
+<div class="modal ending-modal" id="endingModal" role="dialog" aria-modal="true" aria-labelledby="endingTitle"><section class="dialog ending-dialog">
+<div class="sectiontitle">CONCESSION CLOSED · DEED TRANSFER COMPLETE</div><h2 id="endingTitle">They sold you a wasteland.<br>You found a world.</h2>
+<figure class="paradise-postcard"><img src="paradise-postcard.png" alt="A postcard of the restored alien planet: turquoise seas, waterfalls, flourishing forests, two moons, and the mining craft beside its old outpost." width="1536" height="1024"><figcaption><span>A POSTCARD FROM YOUR NEW WORLD</span><blockquote>“the ocean is a desert with it's life underground”</blockquote></figcaption></figure>
+<p>The white layer sealed a vast underground reservoir. When it broke, water returned to the surface—and dormant life woke with it.</p><p>Vantage had written this planet off. The exhausted-concession clause transferred the land to you before their survey noticed the change.</p><p>The trap was supposed to leave a minimum-wage worker holding worthless dust.</p><div class="land-value"><small>YOUR LAND · ESTIMATED VALUE</small><strong>$50,000,000</strong></div><p><b>The water, the forests, the future: yours.</b></p>
+<button class="btn gold" id="watchWorld">WATCH YOUR WORLD GROW</button><button class="btn" id="newExpedition">NEW EXPEDITION</button></section></div>
+<script src="visuals.js"></script><script src="audio.js"></script>
+<script>
+(()=>{'use strict';
+const $=s=>document.querySelector(s),canvas=$('#game'),ctx=canvas.getContext('2d'),stage=$('#stage');
+const art=globalThis.MinerArt;
+const sound=globalThis.MinerAudio||{prefs:{sound:false,music:false},unlock(){},set(){},tick(){},effect(){},silence(){},visible(){}};
+const cfg={tile:42,gravity:3.5,thrust:24,drag:.92,baseMineSeconds:.66,drillTimeFactor:.82,upgradeCostGrowth:3,depthStep:45,fuelLitres:10,fuelSecondsPerLitre:2.5,fuelCost:.5,idleFuelPerSecond:.07,emptyFuelDamagePerSecond:1.5,gasExplosionChance:.2,gasExplosionDamage:12};
+const minerals=[{"id":"dirt","name":"Dirt","color":"#77543e","oreColor":"#77543e","value":0,"rarity":1,"minDepth":0,"spawnWeight":0,"density":1.6,"massKg":16},{"id":"coal","name":"Coal","color":"#77543e","oreColor":"#222b30","value":1,"rarity":1,"minDepth":0,"spawnWeight":1,"density":1.4,"massKg":14},{"id":"copper","name":"Copper","color":"#77543e","oreColor":"#c68552","value":3,"rarity":1.35,"minDepth":8,"spawnWeight":0.65,"density":8.96,"massKg":90},{"id":"quartz","name":"Quartz","color":"#77543e","oreColor":"#e1d9c2","value":9,"rarity":1.55,"minDepth":22,"spawnWeight":0.65,"density":2.65,"massKg":27},{"id":"iron","name":"Iron","color":"#77543e","oreColor":"#a8aca6","value":27,"rarity":1.8,"minDepth":42,"spawnWeight":0.65,"density":7.874,"massKg":79},{"id":"silver","name":"Silver","color":"#77543e","oreColor":"#c4d1d9","value":80,"rarity":2.15,"minDepth":65,"spawnWeight":0.65,"density":10.49,"massKg":105},{"id":"lumen","name":"Lumen","color":"#77543e","oreColor":"#8fcfbd","value":240,"rarity":2.6,"minDepth":90,"spawnWeight":0.65,"density":4.2,"massKg":42},{"id":"gold","name":"Gold","color":"#77543e","oreColor":"#e7ba59","value":720,"rarity":3,"minDepth":120,"spawnWeight":0.65,"density":19.3,"massKg":193},{"id":"cobalt","name":"Cobalt","color":"#77543e","oreColor":"#638bc4","value":2100,"rarity":3.45,"minDepth":155,"spawnWeight":0.65,"density":8.86,"massKg":89},{"id":"xenite","name":"Xenite","color":"#77543e","oreColor":"#c49ccc","value":6300,"rarity":4,"minDepth":190,"spawnWeight":0.65,"density":6.4,"massKg":64},{"id":"diamond","name":"Diamond","color":"#77543e","oreColor":"#d7f0f3","value":19000,"rarity":4.8,"spawnWeight":0.65,"minDepth":225,"density":3.52,"massKg":35}];
+const whiteSeal={id:'whiteSeal',name:'White formation',color:'#eeeade',value:0,rarity:1};
+const bedrock={id:'bedrock',name:'Bedrock',color:'#29333c',oreColor:'#78848e',value:0,rarity:Infinity,weight:0};
+const S={x:0,y:2.04,vx:0,vy:0,fallDistance:0,hp:100,maxHp:100,fuel:10,maxFuel:10,cargo:0,cargoMax:10,cargoValue:0,cargoKg:0,inventory:{},cargoOpen:false,introOpen:true,tutorialOpen:false,ending:null,won:false,landValue:0,paused:false,quit:false,cheats:{god:false,cash:false,instantDrill:false,backpack:false},cashBeforeCheat:0,worldTime:120,money:0,depth:0,keys:new Set(),blocks:new Map(),up:{},gameOver:false,started:false,joystick:{x:0,y:0,active:false},noticeUntil:0,blast:null,drill:{direction:'down',extension:0,spin:0,active:false}};let w=0,h=0,last=0,noticeTimer=0;
+function hash2(x,y){const n=Math.sin(x*127.1+y*311.7+17.3)*43758.5453;return n-Math.floor(n)}function smoothNoise(x,y,sx,sy){const gx=x/sx,gy=y/sy,ix=Math.floor(gx),iy=Math.floor(gy),fx=gx-ix,fy=gy-iy,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash2(ix,iy),b=hash2(ix+1,iy),c=hash2(ix,iy+1),d=hash2(ix+1,iy+1);return (a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v}
+function gasCenter(cx,cy){if(cx < -5||cx>3||cy<1||cy>25||hash2(cx+811,cy-701)>.08)return null;return {x:cx*10+Math.floor(hash2(cx+29,cy+401)*10),y:cy*10+Math.floor(hash2(cx-137,cy+59)*10)}}function gasNear(x,y,radius){for(let cy=Math.floor((y-radius)/10);cy<=Math.floor((y+radius)/10);cy++)for(let cx=Math.floor((x-radius)/10);cx<=Math.floor((x+radius)/10);cx++){const p=gasCenter(cx,cy);if(p&&(x-p.x)*(x-p.x)+(y-p.y)*(y-p.y)<=radius*radius)return true}return false}
+function randMineral(depth,x,y,gasRich){
+  // Near the starting pad is a small accessible coal seam. Richer deposits need deeper shafts.
+  if(depth<4&&x>=2&&x<=5&&hash2(x+44,y)>.35)return minerals[1];
+  const vein=smoothNoise(x+41,y-19,5,4),oreChance=depth<8?.55:.22+vein*.12+.27*Math.max(0,1-depth/42)+(gasRich?.08:0);
+  if(hash2(x+101,y+53)>oreChance)return minerals[0];
+  const adjusted=minerals.map((m,i)=>{
+    if(i===0||depth<m.minDepth)return 0;
+    const age=depth-m.minDepth,ramp=i===1?1:Math.min(1,(age+2)/16);
+    // New tiers emerge gradually; old shallow ores taper out instead of filling the deep map.
+    return m.spawnWeight*ramp*Math.exp(-Math.max(0,age-24)/22)*(gasRich&&age<35?1.65:1);
+  });
+  // Nearby ore cells share a seam type, with a little per-block variation at seam edges.
+  const sample=(hash2(Math.floor(x/3)+611,Math.floor(y/3)-227)+hash2(x-713,y+313)*.16)%1;
+  let n=sample*adjusted.reduce((a,b)=>a+b,0);
+  for(let i=1;i<minerals.length;i++){n-=adjusted[i];if(adjusted[i]>0&&n<=0)return minerals[i]}return minerals[1];
+}
+function key(x,y){return `${x},${y}`}function tileDepth(y){return Math.max(0,y-3)}
+function getBlock(x,y){
+  if(y===281&&x===3){const k=key(x,y);if(!S.blocks.has(k))S.blocks.set(k,{x,y,m:whiteSeal,hit:0,special:true});return S.blocks.get(k)}
+  if(y===281&&x>-40&&x<40){const k=key(x,y);if(!S.blocks.has(k))S.blocks.set(k,{x,y,m:bedrock,hit:0,indestructible:true});return S.blocks.get(k)}
+  if(y>=276&&y<281&&x>=0&&x<=7){const k=key(x,y);if(!S.blocks.has(k))S.blocks.set(k,null);return S.blocks.get(k)}
+if(y>=3&&(x<=-40||x>=40)||y===282&&x>=-40&&x<=40||y===3&&[-9,-8,-7,-1,0,1,7,8,9].includes(x)){const k=key(x,y);if(!S.blocks.has(k))S.blocks.set(k,{x,y,m:bedrock,hp:Infinity,maxHp:Infinity,hit:0,indestructible:true});return S.blocks.get(k)}if(y<3||y>282||Math.abs(x)>40)return null;const k=key(x,y);if(!S.blocks.has(k)){const depth=tileDepth(y),cave=smoothNoise(x+13,y,5,4)*.68+smoothNoise(x-23,y+11,10,8)*.32;if(depth>2&&cave>.68){S.blocks.set(k,null);return null}const gasRisk=gasNear(x,y,1.55),gasRich=gasNear(x,y,3.5),m=randMineral(depth,x,y,gasRich),depthMult=1+Math.floor(depth/6)*.15,hp=depthMult*m.rarity;S.blocks.set(k,{x,y,m,hp,maxHp:hp,hit:0,gasRisk})}return S.blocks.get(k)}
+function resize(){const r=stage.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);w=r.width;h=r.height;canvas.width=Math.max(1,Math.floor(w*d));canvas.height=Math.max(1,Math.floor(h*d));ctx.setTransform(d,0,0,d,0,0)}new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);
+function say(t){const n=$('#notice');n.textContent=t;n.style.opacity=1;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>n.style.opacity=.28,2400)}
+function stats(){updateStoryScanner();enforceCheats();const sky=art.cycle(S);$('#skyClock').textContent=sky.label+' · '+sky.clock;$('#skyClock').setAttribute('data-night',sky.night>.5);updateCargoHud();const lowFuel=S.fuel<S.maxFuel*.15,emptyFuel=S.fuel<=0;$('#fuelAlert').hidden=!lowFuel;$('#fuelAlert').setAttribute('aria-label',emptyFuel?'Empty fuel tank: hull taking damage':'Low fuel: return to fuel depot');$('#fuelVignette').hidden=!(lowFuel&&S.started&&!S.gameOver&&!S.ending);$('#fuelVignette').classList.toggle('empty-tank',emptyFuel);$('#fuelMeter').classList.toggle('fuel-low',lowFuel);$('#fuelMeter').classList.toggle('fuel-empty',emptyFuel);const bar=(id,a,b)=>$(id).style.width=`${Math.max(0,Math.min(100,a/b*100))}%`;$('#hptext').textContent=`${Math.ceil(S.hp)}/${S.maxHp}`;$('#fueltext').textContent=`${S.fuel.toFixed(1)}/${S.maxFuel}`;$('#cargotext').textContent=`${S.cargo}/${cargoLimitLabel(cargoSlotLimit())}`;const currentDepth=(S.y-2.04)*9;$('#depthLabel').textContent=currentDepth<-.5?'HEIGHT':'DEPTH';$('#depth').textContent=`${Math.round(Math.abs(currentDepth))} m`;$('#moneytext').textContent=S.cheats.cash?'$∞':`$${S.money.toFixed(2)}`;bar('#hpbar',S.hp,S.maxHp);bar('#fuelbar',S.fuel,S.maxFuel);bar('#cargobar',S.cargoKg,cargoCapacity());$('#readout').innerHTML=`CARGO VALUE <b>$${S.cargoValue.toFixed(2)}</b><br>DRILL <b>${(1/(cfg.baseMineSeconds*Math.pow(cfg.drillTimeFactor,S.up.drill||0))).toFixed(1)} blocks/s</b>`;const surface=S.y<2.6,fuelStop=surface&&Math.abs(S.x+8)<=.55,oreStop=surface&&Math.abs(S.x)<=.55,upgradeStop=surface&&Math.abs(S.x-8)<=.55;$('#refuel').hidden=!fuelStop;$('#sell').hidden=!oreStop;$('#stationstatus').textContent=fuelStop?'Docked at Fuel Depot':oreStop?'Docked at Ore Exchange':upgradeStop?'Docked at Upgrade Bay':surface?'Use A/D to reach the separate ground stations':'Return to the surface stations';[['#refuel',fuelStop],['#mobileStation',fuelStop],['#sell',oreStop],['#mobileSell',oreStop],['#repair',upgradeStop],['#mobileShop',upgradeStop]].forEach(([id,enabled])=>{const e=$(id);if(e)e.disabled=!enabled});drawShop()}
+// Slot occupancy and rated payload are independent. Overload is allowed, but penalizes flight.
+function cargoSlotLimit(){return S.cheats.backpack?Infinity:S.cargoMax}
+function cargoLimitLabel(n){return Number.isFinite(n)?n:'∞'}
+function cargoCapacity(){return S.cheats.backpack?Infinity:300+150*(S.up.cargo||0)}
+function syncCargo(){
+  S.cargo=0;S.cargoKg=0;S.cargoValue=0;
+  for(const m of minerals){const count=S.inventory[m.id]||0;S.cargo+=count;S.cargoKg+=count*m.massKg;S.cargoValue+=count*m.value}
+}
+function cargoStatus(){
+  const limit=cargoCapacity(),ratio=S.cargoKg/limit,overweight=ratio>1;
+  return {limit,ratio,overweight,speed:overweight?Math.max(.12,.28/Math.pow(ratio,.6)):1-.3*ratio};
+}
+function collectOre(m){
+  if(!minerals.includes(m)||m.value<=0||S.cargo>=cargoSlotLimit())return false;
+  S.inventory[m.id]=(S.inventory[m.id]||0)+1;syncCargo();return true;
+}
+function dropOre(id,amount){
+  const m=minerals.find(m=>m.id===id),count=S.inventory[id]||0;
+  if(S.gameOver||!m||!Number.isInteger(amount)||amount<=0||!count)return false;
+  const dropped=Math.min(count,amount);S.inventory[id]=count-dropped;
+  if(!S.inventory[id])delete S.inventory[id];syncCargo();stats();
+  say(`DROPPED ${dropped} ${m.name.toUpperCase()} · −${dropped*m.massKg} KG`);return true;
+}
+function updateCargoHud(){
+  const load=cargoStatus(),speed=Math.round(load.speed*100);
+  $('#cargoWeight').textContent=`${S.cargoKg} / ${cargoLimitLabel(load.limit)} kg`;
+  $('#cargoEffect').textContent=S.cheats.backpack?'UNLIMITED':load.overweight?'OVERWEIGHT':`${speed}% speed`;
+  $('#cargoMeter').classList.toggle('cargo-overweight',load.overweight);
+  $('#overweightAlert').hidden=!load.overweight;
+  $('#overweightAlert').textContent=`⚠ OVERWEIGHT · ${speed}% SPEED · DROP CARGO`;
+  if(S.cargoOpen)drawCargo();
+}
+let cargoSignature='',cargoReturnFocus=null;
+function drawCargo(){
+  const load=cargoStatus();
+  $('#cargoSummary').innerHTML=`<span><small>SLOTS</small><b>${S.cargo} / ${cargoLimitLabel(cargoSlotLimit())}</b></span><span><small>WEIGHT</small><b>${S.cargoKg} / ${cargoLimitLabel(load.limit)} kg</b></span><span><small>SELL VALUE</small><b>$${S.cargoValue}</b></span><span class="${load.overweight?'overload':''}"><small>${load.overweight?'OVERWEIGHT':'FLIGHT SPEED'}</small><b>${Math.round(load.speed*100)}%</b></span>`;
+  const signature=JSON.stringify(S.inventory);if(signature===cargoSignature)return;cargoSignature=signature;
+  const held=minerals.filter(m=>S.inventory[m.id]>0);
+  $('#cargoRows').innerHTML=held.length?held.map(m=>{const count=S.inventory[m.id];return `<article class="cargo-row"><img src="${art.sprite({x:11,y:28,m}).toDataURL()}" alt=""><div class="cargo-item"><strong>${m.name} <span>× ${count}</span></strong><small>${m.massKg} kg / ore · $${m.value} / ore</small><b>${m.massKg*count} kg · $${m.value*count} total</b></div><div class="cargo-drop"><button class="btn" data-drop="${m.id}" data-count="1" aria-label="Drop one ${m.name}">DROP 1</button><button class="btn" data-drop="${m.id}" data-count="${count}" aria-label="Drop all ${m.name}">DROP ALL</button></div></article>`}).join(''):'<div class="cargo-empty">HOLD EMPTY<br><small>Mine ore to fill your cargo hold.</small></div>';
+}
+function toggleCargo(open){
+  if(open&&(S.gameOver||S.paused||S.ending||S.introOpen))return;
+  S.keys.clear();stopJoy();S.cargoOpen=open;$('#cargoModal').classList.toggle('open',open);$('#layout').inert=open;
+  if(open){cargoReturnFocus=document.activeElement;drawCargo();$('#closeCargo').focus()}
+  else if(cargoReturnFocus?.isConnected)cargoReturnFocus.focus();
+}
+function trapCargoFocus(e){
+  const buttons=Array.from($('#cargoModal').querySelectorAll('button:not(:disabled)')),first=buttons[0],last=buttons[buttons.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+}
+$('#openCargo').onclick=$('#overweightAlert').onclick=()=>toggleCargo(true);
+$('#closeCargo').onclick=()=>toggleCargo(false);
+$('#cargoRows').addEventListener('click',e=>{
+  const button=e.target.closest('[data-drop]');if(!button)return;
+  if(dropOre(button.dataset.drop,Number(button.dataset.count))){
+    const next=$('#cargoRows').querySelector(`[data-drop="${button.dataset.drop}"]`);(next||$('#closeCargo')).focus();
+  }
+});
+
+function enforceCheats(){
+  if(S.cheats.god){S.hp=S.maxHp;S.fuel=S.maxFuel}
+  if(S.cheats.cash)S.money=Infinity;
+}
+function setCheat(id,enabled){
+  if(id==='cash'&&enabled&&!S.cheats.cash)S.cashBeforeCheat=S.money;
+  if(id==='cash'&&!enabled&&S.cheats.cash)S.money=S.cashBeforeCheat;
+  S.cheats[id]=enabled;enforceCheats();stats();
+}
+let pauseReturnFocus=null;
+function togglePause(open){
+  if(S.quit||S.tutorialOpen)return;
+  if(open){pauseReturnFocus=document.activeElement;if(S.cargoOpen)toggleCargo(false);document.body.classList.remove('shopopen')}
+  S.paused=open;S.keys.clear();stopJoy();$('#pauseModal').classList.toggle('open',open);$('#layout').inert=open;$('#modal').inert=open;
+  document.body.classList.toggle('game-paused',open);
+  $('#backpackCheat').checked=S.cheats.backpack;$('#instantDrillCheat').checked=S.cheats.instantDrill;$('#godMode').checked=S.cheats.god;$('#cashCheat').checked=S.cheats.cash;
+  if(open)$('#resumeGame').focus();else if(pauseReturnFocus?.isConnected)pauseReturnFocus.focus();
+}
+function quitGame(){
+  S.quit=true;S.paused=true;S.keys.clear();stopJoy();
+  $('#pauseTitle').textContent='DEEP / MINER';$('#pauseHelp').textContent='Expedition ended. Start a new run when you are ready.';
+  $('#resumeGame').hidden=true;$('#quitGame').hidden=true;$('#cheatControls').hidden=true;$('#restartGame').textContent='START NEW GAME';$('#restartGame').focus();
+}
+function trapPauseFocus(e){
+  const controls=Array.from($('#pauseModal').querySelectorAll('button:not([hidden]),input')).filter(el=>!el.closest('[hidden]'));
+  const first=controls[0],last=controls[controls.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+}
+$('#openPause').onclick=()=>togglePause(true);$('#resumeGame').onclick=()=>togglePause(false);
+$('#restartGame').onclick=()=>location.reload();$('#quitGame').onclick=quitGame;
+$('#backpackCheat').onchange=e=>setCheat('backpack',e.target.checked);$('#instantDrillCheat').onchange=e=>setCheat('instantDrill',e.target.checked);$('#godMode').onchange=e=>setCheat('god',e.target.checked);$('#cashCheat').onchange=e=>setCheat('cash',e.target.checked);
+
+function openTutorial(first=false){
+  S.tutorialOpen=true;S.introOpen=first;S.keys.clear();stopJoy();
+  $('#tutorialModal').classList.add('open');$('#layout').inert=true;$('#pauseModal').inert=true;
+  $('#beginShift').textContent=first?'SIGN CONTRACT · BEGIN SHIFT':'BACK TO MENU';$('#beginShift').focus();
+}
+function closeTutorial(){
+  const first=S.introOpen;S.introOpen=false;S.tutorialOpen=false;$('#tutorialModal').classList.remove('open');$('#pauseModal').inert=false;$('#layout').inert=S.paused;
+  if(first){S.started=true;say('SHIFT STARTED · YOUR FIRST COAL SEAM IS RIGHT OF THE ORE EXCHANGE')}
+  else $('#resumeGame').focus();
+}
+function beginEnding(){
+  if(S.ending)return;
+  S.ending={time:0,startX:S.x,startY:S.y,waterY:281,phase:'breach'};S.keys.clear();stopJoy();S.vx=0;S.vy=0;S.drill.active=false;
+  // The pressure opens a vertical spillway through ordinary rock, away from the three foundations.
+  for(let y=3;y<281;y++)for(let x=2;x<=4;x++)S.blocks.set(key(x,y),null);
+  document.body.classList.add('ending-active');$('#endingCaption').hidden=false;
+  $('#endingCaption').textContent='PRESSURE RISING';sound.effect('flood');
+}
+function updateEnding(dt){
+  const e=S.ending;e.time+=dt;const t=e.time,ease=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};
+  if(t<2){e.waterY=e.startY+1-(t/2)*.6;S.x=e.startX;S.y=e.startY;e.phase='breach'}
+  else if(t<16){const p=ease((t-2)/14);S.x=e.startX+(3-e.startX)*Math.min(1,p*4);S.y=e.startY+(1.7-e.startY)*p;e.waterY=S.y+.45;e.phase='ascent'}
+  else{S.x=3;S.y=1.7+Math.sin(t*2)*.035;e.waterY=2.3+Math.sin(t*1.4)*.025;e.phase=t<20?'spring':'bloom';S.worldTime=150}
+  S.vx=0;S.vy=0;S.drill.active=false;
+  $('#endingCaption').textContent=t<2?'PRESSURE RISING':t<16?'HOLD ON':t<20?'THE PLANET WAS NEVER EMPTY':t<27?'SOMETHING IS WAKING UP':'THIS LAND IS YOURS';
+  if(t>=27&&!S.won){S.won=true;S.landValue=50000000;$('#endingModal').classList.add('open');$('#layout').inert=true;$('#watchWorld').focus();sound.effect('upgrade')}
+  stats();
+}
+function drawStoryWater(cameraX,cameraY,tile,left,right,top,bottom){
+  if(!S.ending)return;
+  const water=S.ending.waterY;ctx.save();ctx.fillStyle='#388da8b0';
+  for(let y=Math.max(3,top);y<=Math.min(281,bottom);y++)for(let x=Math.max(-39,left);x<=Math.min(39,right);x++){
+    if(y+.5<=water||getBlock(x,y))continue;
+    const start=Math.max(y-.5,water);ctx.fillRect(cameraX+(x-.5)*tile,cameraY+start*tile,tile,(y+.5-start)*tile);
+  }
+  if(water<2.5){ctx.fillRect(0,cameraY+water*tile,w,(2.5-water)*tile);ctx.fillStyle='#a2ead5';ctx.fillRect(0,cameraY+water*tile,w,2)}
+  else{ctx.fillStyle='#bbf2e8';ctx.fillRect(cameraX+1.5*tile,cameraY+water*tile,3*tile,3)}
+  ctx.restore();art.renewal(ctx,w,h,cameraX,cameraY,tile,S.ending.time);
+}
+$('#beginShift').onclick=closeTutorial;$('#openTutorial').onclick=()=>openTutorial(false);
+$('#watchWorld').onclick=()=>{$('#endingModal').classList.remove('open');$('#layout').inert=S.paused};
+$('#newExpedition').onclick=()=>location.reload();
+
+function updateStoryScanner(){
+  const show=S.y>270&&!S.ending;$('#seamScanner').hidden=!show;
+  if(show){const b=getBlock(3,281);$('#seamScanner').textContent=Math.abs(S.x-3)>5?'DENSE FORMATION '+(S.x<3?'→':'←'):'WHITE FORMATION · '+Math.floor((b?.hit||0)*100)+'% FRACTURED'}
+}
+function depthHP(b){return (1+Math.floor(tileDepth(b.y)/6)*.15)*b.m.rarity}
+function mine(b,dt){if(b.indestructible||S.fuel<=0||S.cargo>=cargoSlotLimit()&&b.m.value>0)return false;if(b.special){
+  const seconds=60*Math.pow(cfg.drillTimeFactor,(S.up.drill||0)-10);
+  b.hit=S.cheats.instantDrill?1:b.hit+dt/seconds;
+  if(b.hit>=1-1e-9){S.blocks.set(key(b.x,b.y),null);beginEnding()}
+  return true;
+}const drillScale=Math.pow(cfg.drillTimeFactor,S.up.drill||0);b.hit=S.cheats.instantDrill?1:b.hit+dt/(cfg.baseMineSeconds*depthHP(b)*drillScale);if(b.hit>=1){S.blocks.set(key(b.x,b.y),null);if(b.m.value>0){collectOre(b.m);say(`${b.m.name.toUpperCase()} RECOVERED · +$${b.m.value}`)}else say('DIRT CLEARED · NO ORE VALUE');if(b.gasRisk&&Math.random()<cfg.gasExplosionChance){if(!S.cheats.god)S.hp=Math.max(0,S.hp-cfg.gasExplosionDamage);S.blast={x:b.x,y:b.y,life:.42};say(`GAS POCKET BLAST · −${cfg.gasExplosionDamage} HULL`)}stats()}return true}
+function collision(nx,ny,dx,dy,dt,mineDownIntent){const radius=.46,steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/.07));let x=S.x,y=S.y,blockedX=false,blockedY=false,drilling=false,drillDirection=null;function overlaps(px,py,b){const qx=Math.max(b.x-.5,Math.min(px,b.x+.5)),qy=Math.max(b.y-.5,Math.min(py,b.y+.5)),ox=px-qx,oy=py-qy;return ox*ox+oy*oy<radius*radius-1e-7}function nearby(px,py){const out=[];for(let by=Math.floor(py-1);by<=Math.ceil(py+1);by++)for(let bx=Math.floor(px-1);bx<=Math.ceil(px+1);bx++){const b=getBlock(bx,by);if(b)out.push(b)}return out}
+// Sweep the round hull in short steps. Side contact only blocks horizontal travel; it can never snap the ship onto a block top.
+for(let i=1;i<=steps;i++){let tx=S.x+dx*i/steps,ty=S.y+dy*i/steps;if(Math.abs(dx)>1e-8)for(const b of nearby(tx,y)){if(S.blocks.get(key(b.x,b.y))!==b||!overlaps(tx,y,b))continue;if(!b.indestructible&&mine(b,dt/steps)){drilling=true;drillDirection=drillDirection||(dx>0?'right':'left')}if(S.blocks.get(key(b.x,b.y))===b){tx=x;blockedX=true;break}}x=tx;
+// Downward contact mines. Upward contact is solid bedrock/rock, but the drill does not mine it.
+for(const b of nearby(x,ty)){if(S.blocks.get(key(b.x,b.y))!==b||!overlaps(x,ty,b))continue;if(dy>0&&mineDownIntent&&!b.indestructible&&mine(b,dt/steps)){drilling=true;drillDirection=drillDirection||'down'}if(S.blocks.get(key(b.x,b.y))===b){ty=y;blockedY=true;break}}y=ty}
+return {x,y,hit:blockedX||blockedY,drilling,drillDirection,blockedX,blockedY}}
+function animateDrill(dt){
+  const d=S.drill,target=d.active?1:0;
+  d.extension+=Math.max(-dt*7,Math.min(dt*9,target-d.extension));
+  if(d.active)d.spin=(d.spin+dt*36)%(Math.PI*2);
+}
+function drawDrill(sx,sy,tile){art.drill(ctx,sx,sy,tile,S.drill,S.up.drill||0)}
+
+function consumeFuel(dt,drilling,fuelScale){
+  if(S.cheats.god){S.fuel=S.maxFuel;S.hp=S.maxHp;return}
+  const rate=cfg.idleFuelPerSecond*Math.pow(.85,S.up.radiator||0)+(drilling?1.2/cfg.fuelSecondsPerLitre*fuelScale:0),before=S.fuel;
+  const emptySeconds=Math.max(0,dt-before/rate);
+  S.fuel=Math.max(0,before-rate*dt);
+  if(emptySeconds>0)S.hp=Math.max(0,S.hp-emptySeconds*cfg.emptyFuelDamagePerSecond);
+  if(before>0&&S.fuel===0)say('FUEL EMPTY · EMERGENCY SYSTEMS DAMAGING HULL');
+}
+function physics(dt){if(S.introOpen||S.tutorialOpen||S.paused||S.cargoOpen)return;if(S.ending){updateEnding(dt);return;}enforceCheats();if(!S.gameOver)S.worldTime=(S.worldTime+dt)%360;if(S.gameOver){S.drill.active=false;animateDrill(dt);return}if(S.blast){S.blast.life-=dt;if(S.blast.life<=0)S.blast=null}const oldVy=S.vy,fuelScale=(1+(S.up.engine||0)*.1)*Math.pow(.85,S.up.radiator||0);if(!S.started){stats();return}let ax=0,ay=0;if(S.keys.has('a')||S.keys.has('arrowleft'))ax-=1;if(S.keys.has('d')||S.keys.has('arrowright'))ax+=1;if(S.keys.has('w')||S.keys.has('arrowup'))ay-=1;if(S.keys.has('s')||S.keys.has('arrowdown'))ay+=1;if(S.joystick.active){ax+=S.joystick.x;ay+=S.joystick.y}const load=cargoStatus(),thrust=cfg.thrust*(1+(S.up.engine||0)*.15)*(1+(S.up.radiator||0)*.08)*load.speed,verticalThrust=Math.max(thrust,cfg.gravity+cfg.thrust*load.speed*.4);S.vx+=ax*thrust*dt;S.vy+=(cfg.gravity+ay*verticalThrust)*dt;S.vx*=Math.pow(cfg.drag,dt*60);S.vy*=Math.pow(.99,dt*60);const maxSpeed=5*(1+(S.up.radiator||0)*.08)*load.speed;S.vx=Math.max(-maxSpeed,Math.min(maxSpeed,S.vx));S.vy=Math.max(-5.5*load.speed,Math.min(ay>.15?5.5*load.speed:5.5,S.vy));const nx=Math.max(-40,Math.min(40,S.x+S.vx*dt)),ny=Math.max(0,S.y+S.vy*dt),result=collision(nx,ny,nx-S.x,ny-S.y,dt,ay>.15);if(S.ending){S.drill.active=false;return}S.drill.active=result.drilling;if(result.drillDirection)S.drill.direction=result.drillDirection;animateDrill(dt);S.fallDistance+=Math.max(0,result.y-S.y);if(result.blockedY&&oldVy>0){if(S.fallDistance>3&&!S.cheats.god){const impactDamage=Math.max(1,Math.min(40,Math.pow(S.fallDistance-3,1.6)*1.6));S.hp-=impactDamage;say('HARD LANDING · HULL DAMAGED')}S.fallDistance=0}else if(ay<0||result.y<S.y)S.fallDistance=0;consumeFuel(dt,result.drilling,fuelScale);if(result.hit){if(result.x!==nx)S.vx=0;if(result.y!==ny)S.vy=0}S.x=result.x;S.y=result.y;S.depth=Math.max(S.depth,Math.max(0,S.y-2.04)*9);if(S.hp<=0){S.hp=0;S.gameOver=true;showDialog('CRAFT DISABLED',S.fuel===0?'Emergency systems failed after the fuel tank ran dry. Restart to begin a new expedition.':'The hull could not withstand the damage. Restart to begin a new expedition.')}stats()}
+function draw(){
+  if(!w||!h)return;
+  ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+  const tile=Math.min(52,Math.max(30,Math.min(w/12,h/8))),cx=w*.5,cy=h*.38;
+  const cameraX=cx-S.x*tile,cameraY=cy-S.y*tile,time=last/1000;
+  art.background(ctx,w,h,cameraX,cameraY,tile,S,time);
+  const left=Math.floor(-cameraX/tile)-1,right=Math.ceil((w-cameraX)/tile)+1,top=Math.floor(-cameraY/tile)-1,bottom=Math.ceil((h-cameraY)/tile)+1;
+  for(let y=Math.max(3,top);y<=Math.min(282,bottom);y++)for(let x=Math.max(-40,left);x<=Math.min(40,right);x++){
+    const b=getBlock(x,y);if(!b)continue;
+    // This is the same centered rectangle used by collision: no half-tile visual offset.
+    art.terrain(ctx,b,cameraX+(x-.5)*tile,cameraY+(y-.5)*tile,tile);
+  }
+  drawStoryWater(cameraX,cameraY,tile,left,right,top,bottom);
+  art.stations(ctx,cameraX,cameraY,tile,S,time);
+  if(S.blast)art.explosion(ctx,cameraX+S.blast.x*tile,cameraY+S.blast.y*tile,tile,S.blast.life);
+  art.ship(ctx,cx,cy,tile,S,time);drawDrill(cx,cy,tile);
+  if(S.fuel===0&&!S.ending){ctx.fillStyle='#edb586';ctx.font='bold 12px monospace';ctx.fillText('EMPTY TANK · HULL LOSING POWER · RETURN TO FUEL DEPOT',12,h-48)}
+}
+
+function frame(t){const dt=Math.min(.04,(t-last)/1000||0);last=t;physics(dt);sound.tick(S);if(!S.paused&&!S.cargoOpen)draw();requestAnimationFrame(frame)}
+const upgrades=[{id:'drill',name:'Drill head',desc:'18% less drilling time per level',cost:20,max:10},{id:'engine',name:'Vector jets',desc:'+15% thrust · +10% drilling fuel per level',cost:18,max:10},{id:'tank',name:'Fuel tank',desc:'+5 L capacity',cost:16,max:10},{id:'radiator',name:'Radiator',desc:'15% less fuel · better control',cost:18,max:10},{id:'hull',name:'Hull plating',desc:'+30 hull points',cost:20,max:10},{id:'cargo',name:'Cargo rack',desc:'+5 slots · +150 kg rated load',cost:14,max:10}];
+function upgradeIcon(id,level){return '<img src="'+art.upgradePreview(id,S.up,level)+'" alt="Craft with '+id+' level '+level+' fitted" width="64" height="64">'}
+
+let shopSignature='';function drawShop(){const near=S.y<2.6&&Math.abs(S.x-8)<=.55,signature=`${near}:${JSON.stringify(S.up)}:${upgrades.map(u=>S.money>=Math.ceil(u.cost*Math.pow(cfg.upgradeCostGrowth,S.up[u.id]||0))?1:0).join('')}`;if(signature===shopSignature)return;shopSignature=signature;$('#upgrades').innerHTML=upgrades.map(u=>{const lv=S.up[u.id]||0,cost=Math.ceil(u.cost*Math.pow(cfg.upgradeCostGrowth,lv)),pips=Array.from({length:u.max},(_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('');return `<div class="shopitem"><div class="shopicon">${upgradeIcon(u.id,Math.min(u.max,lv+1))}<span class="preview-level">${lv>=u.max?'FITTED':'NEXT · '+(lv+1)}</span></div><div class="shopcopy"><div class="shopname">${u.name}<span>LV ${lv}/${u.max}</span></div><small>${u.desc}</small><div class="levelpips">${pips}</div></div><button class="btn" data-up="${u.id}" ${!near||lv>=u.max||S.money<cost?'disabled':''}>${lv>=u.max?'MAX':'$'+cost.toLocaleString()}</button></div>`}).join('');document.querySelectorAll('[data-up]').forEach(btn=>btn.onclick=()=>{const u=upgrades.find(x=>x.id===btn.dataset.up),lv=S.up[u.id]||0,cost=Math.ceil(u.cost*Math.pow(cfg.upgradeCostGrowth,lv));if(S.money<cost||lv>=u.max||S.y>=2.6||Math.abs(S.x-8)>.55)return;S.money-=cost;S.up[u.id]=lv+1;if(u.id==='tank'){S.maxFuel+=5;S.fuel+=5}if(u.id==='hull'){S.maxHp+=30;S.hp+=30}if(u.id==='cargo')S.cargoMax+=5;sound.effect('upgrade');stats();say(`${u.name.toUpperCase()} UPGRADED`)})}
+function sell(){if(S.y>=2.6||Math.abs(S.x)>.55){say('SELL ORE AT THE ORE EXCHANGE');return}if(!S.cargo){say('CARGO HOLD IS EMPTY');return}S.money+=S.cargoValue;S.inventory={};syncCargo();stats();say('ORE SOLD · CREDITS ADDED')}
+function refuel(){if(S.y>=2.6||Math.abs(S.x+8)>.55){say('REFUEL AT THE FUEL DEPOT');return}if(S.fuel>=S.maxFuel){say('TANK ALREADY FULL');return}const litres=S.maxFuel-S.fuel,cost=litres*cfg.fuelCost;if(S.money<cost){say(`NEED $${cost.toFixed(2)} TO REFUEL`);return}S.money-=cost;S.fuel=S.maxFuel;sound.effect('refuel');stats();say(`REFUELED ${litres.toFixed(1)} L · −$${cost.toFixed(2)}`)}
+function repair(){if(S.y>=2.6||Math.abs(S.x-8)>.55){say('REPAIR AT THE UPGRADE BAY');return}const cost=(S.maxHp-S.hp)*.25;if(!cost){say('HULL IS IN GOOD SHAPE');return}if(S.money<cost){say(`NEED $${cost.toFixed(2)} FOR REPAIRS`);return}S.money-=cost;S.hp=S.maxHp;stats();say('HULL REPAIRED')}
+function showDialog(title,text){$('#dialogtitle').textContent=title;$('#dialogtext').textContent=text;$('#modal').classList.add('open')}$('#dialogclose').onclick=()=>location.reload();$('#sell').onclick=$('#mobileSell').onclick=sell;$('#refuel').onclick=$('#mobileStation').onclick=refuel;$('#repair').onclick=repair;$('#mobileShop').onclick=()=>{if(S.y>=2.6||Math.abs(S.x-8)>.55){say('UPGRADES AVAILABLE AT THE UPGRADE BAY');return}document.body.classList.toggle('shopopen')};$('#closeMobileShop').onclick=()=>document.body.classList.remove('shopopen');
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(S.tutorialOpen){if(k==='escape'&&!S.introOpen)closeTutorial();return}if(k==='escape'&&!e.repeat){e.preventDefault();if(!S.quit)togglePause(!S.paused);return}if(S.paused){if(k==='tab')trapPauseFocus(e);return}if(S.ending)return;if(k==='c'&&!e.repeat){e.preventDefault();toggleCargo(!S.cargoOpen);return}if(S.cargoOpen){if(k==='escape'){e.preventDefault();toggleCargo(false)}else if(k==='tab'){trapCargoFocus(e)}return}if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();S.started=true;S.keys.add(k)}});window.addEventListener('keyup',e=>S.keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>S.keys.clear());
+const joy=$('#joystick'),stick=$('#stick');joy.addEventListener('pointerdown',e=>{if(S.ending||S.introOpen||S.paused)return;joy.setPointerCapture(e.pointerId);S.started=true;S.joystick.active=true;moveJoy(e)});joy.addEventListener('pointermove',e=>{if(S.joystick.active)moveJoy(e)});function moveJoy(e){const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.hypot(dx,dy),max=36,scale=len>max?max/len:1;S.joystick.x=dx*scale/max;S.joystick.y=dy*scale/max;stick.style.transform=`translate(${dx*scale}px,${dy*scale}px)`}function stopJoy(){S.joystick.active=false;S.joystick.x=S.joystick.y=0;stick.style.transform=''}joy.addEventListener('pointerup',stopJoy);joy.addEventListener('pointercancel',stopJoy);
+// touch anywhere on the stage shows a floating joystick where the pilot first touched
+stage.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch'||e.target===joy||joy.contains(e.target))return;const rect=stage.getBoundingClientRect();joy.style.left=`${Math.max(4,Math.min(rect.width-132,e.clientX-rect.left-64))}px`;joy.style.bottom='auto';joy.style.top=`${Math.max(4,Math.min(rect.height-132,e.clientY-rect.top-64))}px`});
+$('#soundEnabled').checked=sound.prefs.sound;$('#musicEnabled').checked=sound.prefs.music;
+$('#soundEnabled').onchange=e=>sound.set('sound',e.target.checked);$('#musicEnabled').onchange=e=>sound.set('music',e.target.checked);
+window.addEventListener('pointerdown',()=>sound.unlock());window.addEventListener('keydown',()=>sound.unlock());
+window.addEventListener('blur',()=>sound.silence());window.addEventListener('focus',()=>sound.visible());
+document.addEventListener?.('visibilitychange',()=>document.hidden?sound.silence():sound.visible());
+$('#garageArt').src=art.building('garage').toDataURL();
+$('#mineralGuide').innerHTML=minerals.filter(m=>m.value>0).map((m,i)=>'<div class="mineral-sample"><img alt="" src="'+art.sprite({x:i,y:8,m}).toDataURL()+'"><span>'+m.name+'<b>$'+m.value.toLocaleString()+' · '+m.massKg+' kg</b><small>From '+Math.round((m.minDepth+.96)*9)+' m</small></span></div>').join('');
+resize();stats();draw();openTutorial(true);say('WASD TO THRUST · BUMP A BLOCK TO MINE');requestAnimationFrame(frame);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script></body></html>
+
