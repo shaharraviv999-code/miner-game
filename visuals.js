@@ -24,7 +24,7 @@ globalThis.MinerArt=(()=>{
   function text(c,str,x,y,size=7,color='#e3d4ad'){c.fillStyle=color;c.font=`bold ${size}px monospace`;c.textAlign='center';c.fillText(str,x,y);c.textAlign='start'}
   function sprite(b){
     const id=b.m.id,cacheKey=`${id}:${b.x}:${b.y}`;if(tiles.has(cacheKey))return tiles.get(cacheKey);
-    const image=canvas(32,32),c=image.getContext('2d'),rng=random(hash(b.x,b.y)),p=id==='whiteSeal'?['#9ca8a6','#bac3bd','#d1d7cc','#e4e5d7','#f2f0df','#ffffef']:id==='bedrock'?palettes.bedrock:rockPalette(b.y);
+    const image=canvas(32,32),c=image.getContext('2d'),rng=random(hash(b.x,b.y)),p=id==='whiteSeal'?['#9ca8a6','#bac3bd','#d1d7cc','#e4e5d7','#f2f0df','#ffffef']:id==='blastStone'?rockPalette(b.y).map(color=>mix(color,'#41453e',.28)):id==='bedrock'?palettes.bedrock:rockPalette(b.y);
     rect(c,p[2],0,0,32,32);
     // Sedimentary bands follow world coordinates, while grit and inclusions vary per block.
     for(let y=0;y<32;y++)for(let x=0;x<32;x++){
@@ -59,6 +59,19 @@ globalThis.MinerArt=(()=>{
       if(id==='diamond')for(let i=0;i<3;i++){const x=7+i*8,y=8+(hash(b.x+i,b.y)%16);poly(c,'#bdd8db',[[x,y-4],[x+4,y],[x,y+4],[x-3,y]]);poly(c,'#f4fff8',[[x,y-4],[x,y+2],[x-3,y]]);rect(c,'#ffffff',x,y-1,2,1)}
     }
     if(id==='bedrock'||id==='whiteSeal')for(let i=0;i<4;i++){let x=rng()*32,y=rng()*32;for(let j=0;j<9;j++){rect(c,p[0],x,y,2,1);x+=2;y+=(rng()>.5?1:-1)}}
+    if(id==='blastStone'){
+      // Broken basalt columns use the same grain and strata as the host terrain.
+      for(let seam=0;seam<3;seam++){
+        let px=4+seam*9+Math.floor(rng()*3);
+        for(let py=1;py<31;py+=2){
+          px=Math.max(2,Math.min(28,px+Math.floor(rng()*3)-1));
+          rect(c,'#222a28',px,py,2,2);rect(c,'#85836a',px+2,py,1,2);
+          if(rng()>.65)rect(c,'#a18a60',px+1,py,1,1);
+          if(rng()>.78){rect(c,'#30382f',px-3,py+1,3,1);rect(c,'#6e725c',px-3,py+2,2,1)}
+        }
+      }
+      for(let chip=0;chip<7;chip++){const px=2+Math.floor(rng()*26),py=2+Math.floor(rng()*26);rect(c,'#777660',px,py,2,1);rect(c,'#353d33',px,py+1,3,1)}
+    }
     // Recessed lower edge is only one source pixel; the full tile remains visibly solid.
     rect(c,'#211e1b15',0,31,32,1);
     // A continuous, eased fade over all 258 underground rows, never abrupt layer bands.
@@ -70,7 +83,30 @@ globalThis.MinerArt=(()=>{
     c.drawImage(sprite(b),x,y,tile,tile);
     const unit=tile/32;
     if(b.hit>0){c.save();c.translate(x,y);c.scale(unit,unit);const rng=random(hash(b.x+99,b.y-7));for(let i=0;i<Math.ceil(b.hit*5);i++){let px=16,py=16;for(let j=0;j<8;j++){rect(c,'#201e20',px,py,2,1);px+=(rng()-.5)*6;py+=(rng()-.5)*6}}c.restore()}
-    if(b.gasRisk){c.save();c.translate(x,y);c.scale(unit,unit);for(let i=0;i<5;i++)rect(c,i%2?'#80bbb0':'#45696c',7+i*3,8+(i%3),2,1);c.restore()}
+    if(b.gasRisk){
+      c.save();c.translate(x,y);c.scale(unit,unit);
+      const tier=b.gasTier||0,rng=random(hash(b.x+457,b.y-263));
+      const tones=[['#293f48','#527c8a','#88bdcc'],['#343f2c','#687d49','#a8c67d'],['#3f3348','#7c638b','#baa1ce']][tier];
+      // Seeded lobed shapes: elongated, branching, pooled, and paired cavities.
+      const deep=Math.max(0,Math.min(1,((b.y-2.54)*9-1000)/1500));
+      const spots=[[8,9],[22,10],[13,23],[25,24]],count=2+Math.floor(deep*2+rng());
+      for(let i=0;i<Math.min(4,count);i++){
+        const px=spots[i][0]+Math.floor(rng()*3)-1,py=spots[i][1]+Math.floor(rng()*3)-1;
+        const variant=Math.floor(rng()*4),rx=2.6+rng()*1.5,ry=2+rng()*2,phase=rng()*6.28;
+        const inside=(ox,oy)=>{
+          const angle=Math.atan2(oy/ry,ox/rx),lobes=variant+2;
+          return Math.hypot(ox/rx,oy/ry)<1+.20*Math.sin(angle*lobes+phase)+.12*Math.cos(angle*3-phase);
+        };
+        for(let oy=-6;oy<=6;oy++)for(let ox=-6;ox<=6;ox++){
+          if(!inside(ox,oy))continue;
+          const rim=!inside(ox-1,oy)||!inside(ox+1,oy)||!inside(ox,oy-1)||!inside(ox,oy+1);
+          rect(c,rim?'#302d28':tones[0],px+ox,py+oy,1,1);
+          if(!rim&&!inside(ox-1,oy-1))rect(c,tones[2],px+ox,py+oy,1,1);
+          else if(!rim&&!inside(ox+1,oy+1))rect(c,tones[1],px+ox,py+oy,1,1);
+        }
+      }
+      c.restore();
+    }
   }
   function disk(c,x,y,r){for(let iy=-r;iy<=r;iy+=3){const span=Math.sqrt(Math.max(0,r*r-iy*iy));rect(c,'#bcad99',x-span,y+iy,span*2,3);rect(c,'#9e9185',x+span*.25,y+iy,span*.7,3)}rect(c,'#9a8c81',x-15,y-8,10,4);rect(c,'#d0bea2',x-5,y+9,18,3)}
   function mix(a,b,t){const aa=parseInt(a.slice(1),16),bb=parseInt(b.slice(1),16);return '#'+[16,8,0].map(s=>Math.round(((aa>>s)&255)*(1-t)+((bb>>s)&255)*t).toString(16).padStart(2,'0')).join('')}
@@ -155,8 +191,120 @@ globalThis.MinerArt=(()=>{
       rect(c,'#6a6860',x,gy,3*tile,5);rect(c,'#313b3c',x,gy+5,3*tile,5);
       for(let k=0;k<12;k++)rect(c,k%2?'#bb9957':'#303638',x+k*tile/4,gy,Math.ceil(tile/4),3);
       c.drawImage(building(type),x,gy-70*tile/32,3*tile,70*tile/32);
+      if(type==='ore'){
+        const yard=state.foundryYard||(state.foundryYard={phase:'idle',age:0,count:0,done:0,last:time});
+        const dt=Math.max(0,Math.min(.05,time-yard.last));yard.last=time;
+        if(!state.paused&&!state.cargoOpen&&!state.serviceOpen&&!state.gameOver)yard.age+=dt;
+        if(yard.phase==='idle'&&(state.smeltDeliveries||0)>yard.done){yard.phase='smelt';yard.age=0;state.smeltStarted=time}
+        if(yard.phase==='smelt'&&yard.age>=6.5){yard.phase='arm';yard.age=0}
+        if(yard.phase==='arm'&&yard.age>=3){yard.count++;yard.done++;yard.phase=yard.count>=10?'pickup':'idle';yard.age=0}
+        if(yard.phase==='pickup'&&yard.age>=8){yard.count=0;yard.phase='idle';yard.age=0}
+        const u=tile/32,t=yard.phase==='smelt'?yard.age:yard.phase==='arm'?6.5:-100,active=yard.phase==='smelt';
+        const clamp=v=>Math.max(0,Math.min(1,v)),ease=v=>{v=clamp(v);return v*v*(3-2*v)};
+        c.save();c.translate(x,gy);c.scale(u,u);
+        // Recessed foundry bay and ceiling-mounted hoist.
+        rect(c,'#202b2b',34,-53,60,51);rect(c,'#677064',34,-55,60,4);
+        rect(c,'#3e4943',35,-52,3,50);rect(c,'#3e4943',91,-52,3,50);
+        rect(c,'#999578',36,-55,56,1);rect(c,'#a09265',48,-54,14,5);
+        const lower=active?ease(t/.65)*(1-ease((t-1.7)/.6)):0,by=-44+lower*7;
+        c.strokeStyle='#9ca391';c.lineWidth=1;
+        for(const bx of [51,59]){c.beginPath();c.moveTo(bx,-49);c.lineTo(bx,by);c.stroke()}
+        const bucketAngle=active?ease((t-.65)/.4)*(1-ease((t-1.55)/.35))*1.25:0;
+        c.save();c.translate(55,by);c.rotate(bucketAngle);
+        poly(c,'#777d70',[[-9,0],[9,0],[6,11],[-6,11]]);rect(c,'#b2ac8b',-10,-1,20,2);
+        rect(c,'#48554e',-5,3,2,5);rect(c,'#48554e',3,3,2,5);
+        if(active&&t<1.3)for(let k=0;k<4;k++)rect(c,['#9da491','#bd9a67','#717d79'][k%3],-7+k*4,-3-(k%2)*2,4,4);
+        c.restore();
+        if(active&&t>.95&&t<1.8)for(let k=0;k<7;k++){
+          const f=clamp((t-.95-k*.07)/.4);if(f>0&&f<1)rect(c,['#a4ab96','#b29363','#7c8982'][k%3],53+(k%3)*3,by+6+f*17,3,3);
+        }
+        // Burner and axle support hold a brown open-topped crucible.
+        rect(c,'#444c42',43,-5,30,4);rect(c,'#77735b',47,-10,22,5);
+        if(active&&t>1.2&&t<4.9)for(let k=0;k<5;k++){
+          const fx=49+k*4,fh=5+Math.sin(time*17+k*2)*2;
+          poly(c,'#d97432',[[fx,-9],[fx+2,-9-fh],[fx+4,-9]]);
+          poly(c,'#ffd172',[[fx+1,-9],[fx+2,-12-fh*.3],[fx+3,-9]]);
+        }
+        rect(c,'#6b7769',43,-24,3,19);rect(c,'#6b7769',70,-24,3,19);
+        const tilt=active?ease((t-3)/.65)*(1-ease((t-5.3)/.8))*.95:0;
+        c.save();c.translate(58,-23);c.rotate(tilt);
+        poly(c,'#70482f',[[-13,-5],[13,-5],[9,10],[5,13],[-6,13],[-10,9]]);
+        poly(c,'#9b6941',[[-12,-3],[-7,-2],[-5,11],[-9,8]]);
+        c.fillStyle='#b88755';c.beginPath();c.ellipse(0,-5,13,4,0,0,Math.PI*2);c.fill();
+        c.fillStyle=active&&t>1.5&&t<5.2?'#edac48':'#342b24';c.beginPath();c.ellipse(0,-5,10.5,2.6,0,0,Math.PI*2);c.fill();
+        if(active&&t>1.8&&t<4.7){rect(c,'#ffe09a',-6,-6,7,1);rect(c,'#f9ce71',3,-5,4,1)}
+        poly(c,'#a87a4b',[[10,-7],[16,-5],[12,-2]]);c.restore();
+        rect(c,'#b4a27c',43,-24,3,3);rect(c,'#b4a27c',70,-24,3,3);
+        // Stream starts at the rotating lip and lands inside the ingot mold.
+        poly(c,'#657064',[[76,-7],[91,-7],[88,-2],[78,-2]]);rect(c,'#222e29',78,-6,11,2);
+        if(active&&t>3.55&&t<5.05){
+          const lipX=58+15*Math.cos(tilt)+5*Math.sin(tilt),lipY=-23+15*Math.sin(tilt)-5*Math.cos(tilt);
+          c.strokeStyle='#e99d3f';c.lineWidth=3;c.beginPath();c.moveTo(lipX,lipY);c.quadraticCurveTo(83,lipY+2,84,-5);c.stroke();
+          c.strokeStyle='#ffe09b';c.lineWidth=1;c.stroke();
+        }
+        if(t>3.65&&state.smeltStarted!==undefined&&!(yard.phase==='arm'&&yard.age>.45)){
+          const fill=clamp((t-3.65)/1.4);poly(c,t<5.4?'#ffce72':'#c9ad78',[[79,-4],[80,-4-3*fill],[87,-4-3*fill],[89,-4],[87,-2],[80,-2]]);
+        }
+        // Open-top freight bin: rear wall, stacked ingots, then the cutaway front.
+        const swapping=yard.phase==='pickup',p=yard.age;
+        const lift=swapping&&p>3&&p<4.3?ease((p-3)/1.3)*34:0;
+        const binY=swapping&&p>=4.3&&p<5.5?-34*(1-ease((p-4.3)/1.2)):-lift;
+        const fullBin=!(swapping&&p>=4.3);
+        c.save();c.translate(0,binY);
+        poly(c,'#536659',[[7,-18],[30,-18],[33,-13],[33,-2],[7,-2]]);
+        rect(c,'#243c34',9,-16,21,12);
+        for(let k=0;k<(fullBin?yard.count:0);k++){const ix=10+(k%5)*4,iy=-5-Math.floor(k/5)*4;poly(c,'#d4b57d',[[ix,iy],[ix+1,iy-2],[ix+4,iy-2],[ix+4,iy],[ix+3,iy+1]])}
+        rect(c,'#75816a',7,-7,26,6);rect(c,'#adb08a',7,-18,24,2);rect(c,'#9a9d76',7,-7,26,1);
+        for(let k=0;k<4;k++)rect(c,'#46594c',10+k*6,-5,2,4);
+        c.restore();
+        // Articulated robot lifts from the mold, swings left, and opens its claw.
+        let handX=83,handY=-12,carrying=false;
+        if(yard.phase==='arm'){
+          const a=yard.age;
+          if(a<.45)handY=-12+ease(a/.45)*7;
+          else if(a<1.1){handY=-5-ease((a-.45)/.65)*31;carrying=true}
+          else if(a<2.1){handX=83-ease((a-1.1))*63;handY=-36;carrying=true}
+          else if(a<2.7){handX=20;handY=-36+ease((a-2.1)/.6)*24;carrying=true}
+          else {handX=20;handY=-12-ease((a-2.7)/.3)*15}
+        }
+        const elbowX=(60+handX)/2,elbowY=Math.min(-31,handY-12);
+        rect(c,'#59665b',56,-7,9,6);
+        c.strokeStyle='#b09c70';c.lineWidth=4;c.beginPath();c.moveTo(60,-7);c.lineTo(elbowX,elbowY);c.lineTo(handX,handY-4);c.stroke();
+        for(const [jx,jy] of [[60,-7],[elbowX,elbowY],[handX,handY-4]]){rect(c,'#34453e',jx-2,jy-2,4,4);rect(c,'#d0b580',jx-1,jy-1,2,2)}
+        c.strokeStyle='#9ba795';c.lineWidth=1.5;c.beginPath();c.moveTo(handX-4,handY-3);c.lineTo(handX-4,handY+1);c.moveTo(handX+4,handY-3);c.lineTo(handX+4,handY+1);c.stroke();
+        if(carrying)rect(c,'#d9b87c',handX-3,handY-1,6,3);
+        if(yard.phase==='arm'&&yard.age>=2.7)rect(c,'#d9b87c',17,-10,6,3);
+        // A tiny distant freighter grows as it approaches, exchanges bins, then leaves.
+        if(swapping){
+          const approach=ease(p/2.5),leave=ease((p-5.5)/2.5),near=approach*(1-leave),scale=.14+.86*near;
+          const shipX=20+(1-approach)*60+leave*80,shipY=-64-(1-near)*65;
+          c.save();c.translate(shipX,shipY);c.scale(scale,scale);
+          poly(c,'#4f6462',[[-24,0],[-16,-10],[13,-10],[25,-2],[20,8],[-20,8]]);rect(c,'#b69d66',-15,-7,25,3);rect(c,'#88c6be',12,-5,7,5);
+          rect(c,'#2a3a39',-19,7,9,4);rect(c,'#2a3a39',10,7,9,4);
+          for(const ex of [-15,14])poly(c,'#9edbd0',[[ex-2,11],[ex+2,11],[ex,16+Math.sin(time*23)*2]]);
+          if(p>2.5&&p<5.5){c.strokeStyle='#c4bb91';c.lineWidth=1;c.beginPath();c.moveTo(-10,8);c.lineTo(-10,46+binY);c.moveTo(10,8);c.lineTo(10,46+binY);c.stroke()}
+          c.restore();
+        }
+        c.restore();
+      }
+      if(type==='fuel'){
+        const u=tile/32,phase=time*2,angle=Math.sin(phase)*.18;
+        c.save();c.translate(x+23*u,gy-32*u);
+        const line=(ax,ay,bx,by,color,width=2)=>{c.strokeStyle=color;c.lineWidth=width*u;c.beginPath();c.moveTo(ax*u,ay*u);c.lineTo(bx*u,by*u);c.stroke()};
+        rect(c,'#373f39',-17*u,27*u,42*u,5*u);rect(c,'#a18e63',-16*u,27*u,40*u,u);
+        line(-10,27,0,0,'#c3a165',3);line(0,0,10,27,'#c3a165',3);line(-6,18,6,18,'#786d50');line(-7,20,5,7,'#786d50');
+        rect(c,'#56675e',10*u,18*u,13*u,9*u);rect(c,'#98a58b',12*u,19*u,9*u,2*u);
+        const crankX=16+Math.cos(phase)*4,crankY=22+Math.sin(phase)*4;
+        c.strokeStyle='#b19b6d';c.lineWidth=2*u;c.beginPath();c.arc(16*u,22*u,5*u,0,Math.PI*2);c.stroke();line(16,22,crankX,crankY,'#d3b674');
+        line(crankX,crankY,15*Math.cos(angle),15*Math.sin(angle),'#929e8b');
+        const headX=-18*Math.cos(angle),headY=-18*Math.sin(angle);
+        line(headX,headY+7,headX,28,'#b5bba3',1);rect(c,'#687364',-21*u,25*u,7*u,3*u);
+        c.save();c.rotate(angle);rect(c,'#584d38',-19*u,-4*u,38*u,7*u);rect(c,'#b9985c',-18*u,-3*u,36*u,3*u);
+        poly(c,'#a88550',[[-21*u,-5*u],[-15*u,-4*u],[-15*u,6*u],[-20*u,11*u],[-23*u,9*u]]);
+        rect(c,'#dcc58d',-2*u,-2*u,4*u,4*u);c.restore();c.restore();
+      }
       const night=cycle(state).night;if(night>.05){const u=tile/32,lampX=cameraX+wx*tile,lampY=gy-28*u;c.save();c.globalAlpha=night;rect(c,'#ecc68212',lampX-20*u,lampY-4*u,40*u,30*u);rect(c,'#ecc68218',lampX-12*u,lampY,24*u,24*u);rect(c,'#f5d293',lampX-2*u,lampY,4*u,u*2);c.restore()}
-      const near=state.y<2.6&&Math.abs(state.x-wx)<=.55;
+      const near=Math.abs(state.y-2.04)<=.04&&Math.abs(state.x-wx)<=.4;
       c.font='bold 9px monospace';c.textAlign='center';c.fillStyle=near?'#f4cc75':'#d7c4a6';c.fillText(label,cameraX+wx*tile,gy-70*tile/32-7);c.textAlign='start';
       if(near){c.fillStyle='#f4cb73';c.fillRect(cameraX+wx*tile-3,gy-70*tile/32-20,6,3)}
     }
@@ -210,7 +358,7 @@ globalThis.MinerArt=(()=>{
     if(d.active&&d.extension>.75)for(let i=0;i<3;i++)rect(c,i%2?'#b18045':'#f6d18a',tip+1+(Math.floor(d.spin*3)+i)%4,Math.round(Math.sin(d.spin+i*2)*4),1,1);
     c.restore();
   }
-  function explosion(c,x,y,tile,life){const p=1-life/.42;c.save();c.globalAlpha=Math.max(0,life/.42);for(let i=0;i<16;i++){const a=i*Math.PI/8,r=(.1+p*.8)*tile;rect(c,i%3?'#cb8851':'#efd2a0',x+Math.cos(a)*r,y+Math.sin(a)*r,3+p*4,3+p*4)}c.restore()}
+  function explosion(c,x,y,tile,life,color){const p=1-life/.42;c.save();c.globalAlpha=Math.max(0,life/.42);for(let i=0;i<16;i++){const a=i*Math.PI/8,r=(.1+p*.8)*tile;rect(c,i%3?(color||'#cb8851'):'#efd2a0',x+Math.cos(a)*r,y+Math.sin(a)*r,3+p*4,3+p*4)}c.restore()}
   function icon(id){
     if(icons.has(id))return icons.get(id);const image=canvas(32,32),c=image.getContext('2d');
     rect(c,'#222e31',0,0,32,32);
@@ -219,6 +367,7 @@ globalThis.MinerArt=(()=>{
     if(id==='tank'){rect(c,'#344649',9,5,15,23);rect(c,'#a68e5f',10,7,13,19);rect(c,'#d3b778',12,6,9,2);rect(c,'#6d7668',9,11,15,3);rect(c,'#6d7668',9,22,15,3);rect(c,'#9eafa0',15,3,4,3)}
     if(id==='radiator'){rect(c,'#849b91',5,7,23,20);rect(c,'#364a4b',7,9,19,16);for(let x=9;x<25;x+=3)rect(c,'#b0b8a0',x,9,1,16);rect(c,'#a57b45',4,11,2,11)}
     if(id==='hull'){poly(c,'#516367',[[7,5],[26,5],[25,20],[16,29],[7,21]]);poly(c,'#b69350',[[10,8],[23,8],[22,18],[16,25],[10,19]]);rect(c,'#e1bd76',10,8,13,2);rect(c,'#626e66',15,13,3,7)}
+    if(id==='suspension'){rect(c,'#a8b4a1',13,4,6,24);for(let y=7;y<26;y+=4){poly(c,'#caab71',[[8,y],[23,y+2],[23,y+4],[8,y+2]])}rect(c,'#748576',8,3,16,3);rect(c,'#748576',8,27,16,3)}
     if(id==='cargo'){rect(c,'#524b3b',5,8,23,21);rect(c,'#a18551',7,9,19,18);rect(c,'#d0af70',7,9,19,2);rect(c,'#585d4c',10,10,2,17);rect(c,'#585d4c',21,10,2,17);rect(c,'#d2b87b',14,16,5,4)}
     const url=image.toDataURL();icons.set(id,url);return url;
   }
@@ -255,6 +404,7 @@ globalThis.MinerArt=(()=>{
   }
   const previews=new Map();
   function upgradePreview(id,up,level){
+    if(id==='suspension')return icon('suspension');
     const fitted={...up,[id]:level},key=id+':'+['drill','engine','tank','radiator','hull','cargo'].map(k=>fitted[k]||0).join(':');
     if(previews.has(key))return previews.get(key);
     const image=canvas(64,64),c=image.getContext('2d');c.imageSmoothingEnabled=false;rect(c,'#19282d',0,0,64,64);

@@ -39,13 +39,45 @@ globalThis.MinerAudio=(()=>{
   function set(name,on){if(!(name in prefs))return;prefs[name]=!!on;try{localStorage.setItem('deep-miner-audio',JSON.stringify(prefs))}catch{}if(ctx){ramp(sfx,prefs.sound?.45:0);ramp(music,prefs.music?.24:0)}if(name==='music'&&!on)nextNote=0;unlock()}
   function tick(state){
     if(!ctx)return;
-    const active=!state.paused&&!state.cargoOpen&&!state.quit&&!state.gameOver&&!state.tutorialOpen&&!state.ending&&!hidden;
+    const active=!state.serviceOpen&&!state.paused&&!state.cargoOpen&&!state.quit&&!state.gameOver&&!state.tutorialOpen&&!state.ending&&!hidden;
+    warnings(state,active&&!state.introOpen);
     playing=!state.quit&&!state.gameOver;
     const moving=active&&(state.keys.size>0||(state.joystick.active&&Math.hypot(state.joystick.x,state.joystick.y)>.15));
     ramp(master,hidden?0:.55);ramp(music,prefs.music?(state.paused||state.cargoOpen?.12:.24):0);
     ramp(drillGain,active&&state.drill.active?.22:0);ramp(jetGain,moving?.20:0);
     drillOsc.frequency.setTargetAtTime(94+(state.up.drill||0)*9,ctx.currentTime,.08);jetOsc.frequency.setTargetAtTime(48+(state.up.engine||0)*5,ctx.currentTime,.08);
     if(!playing)ramp(music,0);
+  }
+  let warningTime=null,lowSeconds=0,fuelWait=0,hullWait=null,lastBreak=-1;
+  function brokenMachine(index,t){
+    // Seven distinct failures: rattle, slipping belt, arc, knock, valve,
+    // grinding bearing, and a motor struggling to turn over.
+    if(index===0)for(let i=0;i<16;i++){const at=t+i*.12+(i%3)*.017;tone(160-i*4,at,.09,.10,'triangle',sfx,45);noise(at,.08,.12,1100,sfx)}
+    if(index===1){tone(380,t,1.8,.055,'sawtooth',sfx,65);noise(t,1.9,.13,1700,sfx);for(let i=0;i<7;i++)noise(t+i*.24,.15,.08,2800,sfx)}
+    if(index===2)for(let i=0;i<11;i++){const at=t+i*.18+(i%2)*.04;noise(at,.11,.15,2600,sfx);tone(62,at,.12,.08,'sawtooth',sfx,31)}
+    if(index===3)for(let i=0;i<8;i++){const at=t+i*.27;tone(105,at,.2,.20,'triangle',sfx,28);noise(at,.10,.12,480,sfx)}
+    if(index===4){noise(t,1.9,.17,850,sfx);noise(t+.6,1.3,.10,2100,sfx);tone(115,t,1.5,.04,'triangle',sfx,38)}
+    if(index===5){tone(72,t,2.2,.10,'sawtooth',sfx,24);tone(109,t,2,.06,'triangle',sfx,39);noise(t,1.9,.12,600,sfx)}
+    if(index===6)for(let i=0;i<10;i++){const at=t+i*.22;tone(48+(i%3)*17,at,.18,.14,'sawtooth',sfx,24);noise(at,.14,.08,400,sfx)}
+  }
+  function warnings(state,active){
+    const now=ctx.currentTime,dt=warningTime===null?0:Math.max(0,Math.min(.1,now-warningTime));warningTime=now;
+    const low=state.fuel<state.maxFuel*.15,damaged=state.hp>0&&state.hp<state.maxHp*.5;
+    if(!low){lowSeconds=0;fuelWait=0}
+    if(!damaged)hullWait=null;
+    if(!active||!prefs.sound||ctx.state!=='running')return;
+    if(low){
+      lowSeconds+=dt;fuelWait-=dt;
+      if(fuelWait<=0){tone(740,now,.18,.17,'square',sfx,1040);tone(1040,now+.24,.18,.15,'square',sfx,740);fuelWait=.65+3.35*Math.exp(-lowSeconds/22)}
+    }
+    if(damaged){
+      if(hullWait===null)hullWait=4+Math.random()*3;
+      hullWait-=dt;
+      if(hullWait<=0){
+        hullWait=4+Math.random()*3;
+        if(Math.random()<1-state.hp/state.maxHp){let index=Math.floor(Math.random()*6);if(index>=lastBreak)index++;index%=7;lastBreak=index;brokenMachine(index,now)}
+      }
+    }
   }
   function effect(id){
     if(!ctx||ctx.state!=='running'||!prefs.sound||hidden)return;const t=ctx.currentTime;
